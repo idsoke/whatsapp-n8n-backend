@@ -1,0 +1,70 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum OrganizationType {
+  CLASS_TREASURER
+  COMMUNITY_TREASURER
+  RT_TREASURER
+  STUDY_GROUP_TREASURER
+  OTHER
+}
+
+enum TransactionType {
+  INCOME
+  EXPENSE
+}
+
+enum TransactionSource {
+  WHATSAPP
+  WEB
+  API
+}
+
+model User {
+  id                 String        @id @default(cuid())
+  name               String
+  email              String?       @unique
+  whatsappNumber     String        @unique
+  isWhatsappVerified Boolean       @default(false)
+  organization       Organization?
+  transactions       Transaction[] @relation("TransactionCreator")
+  createdAt          DateTime      @default(now())
+  updatedAt          DateTime      @updatedAt
+}
+
+model Organization {
+  id           String           @id @default(cuid())
+  name         String
+  type         OrganizationType @default(CLASS_TREASURER)
+  ownerId      String           @unique
+  owner        User             @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  transactions Transaction[]
+  createdAt    DateTime         @default(now())
+  updatedAt    DateTime         @updatedAt
+}
+
+model Transaction {
+  id                String            @id @default(cuid())
+  organizationId    String
+  organization      Organization      @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  createdByUserId   String
+  createdByUser     User              @relation("TransactionCreator", fields: [createdByUserId], references: [id], onDelete: Restrict)
+  type              TransactionType
+  amount            Int
+  description       String
+  source            TransactionSource @default(WEB)
+  balanceAfter      Int
+  providerMessageId String?           @unique
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
+
+  @@index([organizationId, createdAt])
+  @@index([createdByUserId, createdAt])
+  @@index([source, createdAt])
+}

@@ -1,0 +1,98 @@
+{
+  "name": "WhatsApp Transaction Automation",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "whatsapp",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "1d7a2c3a-0b10-4e41-a5fb-3f4dcd7f1c01",
+      "name": "WhatsApp Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [240, 300],
+      "webhookId": "whatsapp-transaction-webhook"
+    },
+    {
+      "parameters": {
+        "jsCode": "const input = $json.body || $json;\nconst cloudMessage = input.entry?.[0]?.changes?.[0]?.value?.messages?.[0];\nconst rawText = input.Body || input.message || input.text || input.text?.body || cloudMessage?.text?.body || '';\nconst normalized = String(rawText).trim();\nconst transactionRegex = /^(masuk|keluar)\\s+([\\d.]+)\\s*(.*)$/i;\nconst commandOnlyRegex = /^(saldo|laporan bulan ini|pengeluaran bulan ini)$/i;\nlet command;\nlet amount;\nlet description = '';\nconst commandMatch = normalized.match(commandOnlyRegex);\nconst transactionMatch = normalized.match(transactionRegex);\nif (commandMatch) {\n  command = commandMatch[1].toLowerCase();\n} else if (transactionMatch) {\n  command = transactionMatch[1].toLowerCase();\n  amount = Number(transactionMatch[2].replace(/\\./g, ''));\n  description = (transactionMatch[3] || '').trim();\n}\nreturn [{\n  json: {\n    message: normalized,\n    command,\n    amount,\n    description,\n    from: input.From || input.from || cloudMessage?.from || input.sender,\n    providerMessageId: input.MessageSid || input.messageId || cloudMessage?.id,\n    receivedAt: new Date().toISOString()\n  }\n}];"
+      },
+      "id": "7b076d87-b693-4c8c-a9d5-593574556b89",
+      "name": "Parse WhatsApp Message",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [520, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://localhost:3000/transactions/wa",
+        "sendBody": true,
+        "contentType": "json",
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ message: $json.message, command: $json.command, amount: $json.amount, description: $json.description }) }}",
+        "options": {}
+      },
+      "id": "c9460c18-6ff7-4d11-88d6-b76cc21a411b",
+      "name": "Send to NestJS",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [800, 300]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify($json) }}",
+        "options": {}
+      },
+      "id": "e3327593-13b8-469c-b86a-87489022545d",
+      "name": "Respond to Webhook",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [1080, 300]
+    }
+  ],
+  "connections": {
+    "WhatsApp Webhook": {
+      "main": [
+        [
+          {
+            "node": "Parse WhatsApp Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse WhatsApp Message": {
+      "main": [
+        [
+          {
+            "node": "Send to NestJS",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send to NestJS": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "tags": []
+}
