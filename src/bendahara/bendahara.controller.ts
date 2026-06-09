@@ -366,6 +366,11 @@ export class BendaharaController {
             <input id="description" placeholder="iuran kelas" type="text">
           </label>
 
+          <label class="field">
+            Nomor WhatsApp Bendahara
+            <input id="phoneNumber" placeholder="628123456789" required type="tel">
+          </label>
+
           <div class="actions">
             <button id="submitButton" type="submit">Simpan</button>
             <button class="secondary" id="resetButton" type="reset">Reset</button>
@@ -435,10 +440,13 @@ export class BendaharaController {
       emptyState.style.display = transactions.length ? 'none' : 'block';
 
       transactions.slice(0, 15).forEach(function(transaction) {
+        const isMasuk = transaction.type === 'INCOME';
+        const badgeClass = isMasuk ? 'masuk' : 'keluar';
+        const badgeLabel = isMasuk ? 'Masuk' : 'Keluar';
         const row = document.createElement('tr');
         row.innerHTML =
           '<td>' + transaction.id + '</td>' +
-          '<td><span class="badge ' + transaction.type + '">' + transaction.type + '</span></td>' +
+          '<td><span class="badge ' + badgeClass + '">' + badgeLabel + '</span></td>' +
           '<td class="amount">' + formatter.format(transaction.amount) + '</td>' +
           '<td>' + escapeHtml(transaction.description) + '</td>' +
           '<td class="date">' + new Date(transaction.createdAt).toLocaleString('id-ID') + '</td>';
@@ -474,11 +482,12 @@ export class BendaharaController {
         const type = document.querySelector('input[name="type"]:checked').value;
         const amount = Number(document.getElementById('amount').value);
         const description = document.getElementById('description').value.trim();
+        const phoneNumber = document.getElementById('phoneNumber').value.trim();
 
         const response = await fetch('/bendahara/transactions', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ type, amount, description })
+          body: JSON.stringify({ type, amount, description, phoneNumber })
         });
 
         const data = await response.json();
@@ -486,6 +495,7 @@ export class BendaharaController {
           throw new Error(data.message || 'Transaksi gagal disimpan.');
         }
 
+        localStorage.setItem('bendahara_phone', phoneNumber);
         form.reset();
         document.getElementById('typeMasuk').checked = true;
         setStatus(data.message + ' Saldo: ' + formatter.format(data.currentBalance || 0), false);
@@ -495,6 +505,19 @@ export class BendaharaController {
       } finally {
         setLoading(false);
       }
+    });
+
+    const savedPhone = localStorage.getItem('bendahara_phone');
+    if (savedPhone) {
+      document.getElementById('phoneNumber').value = savedPhone;
+    }
+
+    form.addEventListener('reset', function() {
+      setTimeout(function() {
+        const saved = localStorage.getItem('bendahara_phone');
+        if (saved) document.getElementById('phoneNumber').value = saved;
+        document.getElementById('typeMasuk').checked = true;
+      }, 0);
     });
 
     refreshButton.addEventListener('click', loadData);
