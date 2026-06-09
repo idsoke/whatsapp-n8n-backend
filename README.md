@@ -1,136 +1,104 @@
-# WhatsApp Automation Backend
+# KasBot — WhatsApp-Powered Cash Management System
 
-Backend NestJS ini dibuat untuk otomasi pencatatan transaksi melalui WhatsApp dengan bantuan n8n.
+Backend NestJS untuk otomasi pencatatan kas melalui WhatsApp dengan bantuan n8n.
 
-User bisa mengirim pesan WhatsApp seperti:
+Bendahara cukup kirim pesan WhatsApp seperti:
 
 ```text
 masuk 50000 iuran kelas
 keluar 25000 beli konsumsi
 ```
 
-n8n akan membaca pesan tersebut, mengubahnya menjadi data terstruktur, mengirimkannya ke backend, lalu backend mengembalikan saldo terbaru.
+n8n membaca pesan, mengubahnya menjadi data terstruktur, mengirimkannya ke KasBot, lalu KasBot membalas dengan saldo terbaru.
 
-## Ringkasan Fitur
+## Fitur
 
 - Parsing command transaksi dari WhatsApp:
   - `masuk 50000 iuran kelas`
   - `keluar 25000 beli konsumsi`
-- Endpoint backend:
+  - `saldo`
+  - `laporan bulan ini`
+  - `pengeluaran bulan ini`
+- Webhook endpoint untuk n8n:
   - `POST /transactions/wa`
-- Modul admin untuk pengaturan sistem:
-  - `GET /admin`
-  - `GET /admin/settings`
-  - `PUT /admin/settings`
-  - `GET /admin/system-status`
-- Modul web bendahara:
+- Web bendahara — input transaksi manual tanpa WhatsApp:
   - `GET /bendahara`
   - `GET /bendahara/summary`
   - `GET /bendahara/transactions`
   - `POST /bendahara/transactions`
-- Frontend admin sistem:
-  - pengaturan nama aplikasi
-  - pengaturan provider WhatsApp
-  - aktivasi/nonaktivasi webhook WhatsApp
-  - pengaturan backend base URL
-  - pengaturan kontak admin
-  - pengaturan timezone
-  - pengaturan tanggal tutup buku
-  - status sistem dan environment
-- Frontend bendahara:
-  - halaman khusus input transaksi tanpa WhatsApp
-  - pilihan pemasukan atau pengeluaran
-  - input nominal dan keterangan
-  - ringkasan saldo, pemasukan bulan ini, dan pengeluaran bulan ini
-  - tabel transaksi terbaru
-  - pencatatan report dan laporan bulanan
-- Pemrosesan transaksi:
-  - `masuk` mencatat pemasukan dan menambah saldo
-  - `keluar` mencatat pengeluaran dan mengurangi saldo
-- Format response API:
+- Admin sistem — konfigurasi aplikasi:
+  - `GET /admin`
+  - `GET /admin/settings`
+  - `PUT /admin/settings`
+  - `GET /admin/system-status`
+- Validasi input ketat — menolak command tidak dikenal dan nominal tidak valid
+- Notifikasi balik ke WhatsApp via n8n setelah transaksi berhasil
 
-  ```json
-  {
-    "success": true,
-    "message": "Transaction created",
-    "currentBalance": 1250000
-  }
-  ```
+## Tech Stack
 
-- Validasi input:
-  - menolak command yang tidak didukung
-  - menolak nominal transaksi yang kosong atau tidak valid
-  - menerima pesan WhatsApp mentah atau payload yang sudah diparse oleh n8n
-- Support command saldo:
-  - `saldo`
-- Support command laporan bulanan:
-  - `laporan bulan ini`
-  - `pengeluaran bulan ini`
-- Arsitektur workflow n8n:
-  - menerima webhook WhatsApp
-  - parse isi pesan
-  - kirim HTTP request ke NestJS API
-  - kirim response webhook
-  - optional reply balik ke WhatsApp
-- Dokumentasi pendukung:
-  - arsitektur webhook
-  - sequence diagram Mermaid
-  - desain workflow n8n
-  - skeleton workflow n8n yang bisa diimport
-
-## Teknologi yang Digunakan
-
-- Node.js: runtime untuk menjalankan backend JavaScript/TypeScript.
-- NestJS: framework backend untuk membuat module, controller, service, validation pipe, dan endpoint API.
-- TypeScript: bahasa utama agar implementasi backend lebih type-safe dan mudah dirawat.
-- n8n: automation workflow tool untuk menerima webhook WhatsApp, parsing pesan, dan memanggil API NestJS.
-- WhatsApp provider webhook: jalur integrasi pesan masuk dari WhatsApp. Bisa memakai WhatsApp Cloud API, Twilio, Wablas, Fonnte, atau provider lain.
-- class-validator: validasi field request seperti `message`, `command`, dan `amount`.
-- class-transformer: transformasi data request, misalnya mengubah `amount` menjadi number.
-- Mermaid: membuat sequence diagram di `architecture.md`.
-- JSON workflow: `n8n-whatsapp-workflow.json` sebagai skeleton workflow yang bisa diimport ke n8n.
+| Teknologi | Peran |
+|-----------|-------|
+| NestJS | Framework backend (module, controller, service, pipe) |
+| TypeScript | Bahasa utama — type-safe dan mudah dirawat |
+| Prisma | ORM untuk PostgreSQL |
+| PostgreSQL | Database transaksi dan organisasi |
+| n8n | Automation workflow — menerima webhook WhatsApp dan memanggil API |
+| class-validator | Validasi request payload |
 
 ## Cara Menjalankan
 
+### Prasyarat
+
+- Node.js 20+
+- PostgreSQL berjalan di port 5432
+- n8n (opsional, untuk integrasi WhatsApp)
+
+### Langkah
+
 1. Install dependencies:
 
-   ```powershell
+   ```bash
    npm install
    ```
 
-2. Start the backend:
+2. Salin file environment:
 
-   ```powershell
+   ```bash
+   cp .env.example .env
+   ```
+
+3. Sesuaikan `DATABASE_URL` di `.env`, lalu jalankan migrasi:
+
+   ```bash
+   npx prisma migrate dev
+   ```
+
+4. Jalankan server:
+
+   ```bash
    npm run start:dev
    ```
 
-3. n8n can call:
+Server berjalan di `http://localhost:3000`.
 
-   ```text
-   POST http://localhost:3000/transactions/wa
-   ```
+## Halaman Web
 
-4. Admin system page can be opened at:
+| URL | Halaman |
+|-----|---------|
+| `http://localhost:3000/bendahara` | Web bendahara — input transaksi manual |
+| `http://localhost:3000/admin` | Admin sistem — konfigurasi aplikasi |
 
-   ```text
-   http://localhost:3000/admin
-   ```
-
-5. Bendahara web page can be opened at:
-
-   ```text
-   http://localhost:3000/bendahara
-   ```
-
-## Example request
+## Contoh Request WhatsApp
 
 ```json
+POST /transactions/wa
 {
+  "phoneNumber": "628123456789",
   "message": "masuk 50000 iuran kelas"
 }
 ```
 
-## Example response
+Response:
 
 ```json
 {
@@ -140,39 +108,31 @@ n8n akan membaca pesan tersebut, mengubahnya menjadi data terstruktur, mengirimk
 }
 ```
 
-## Workflow docs
+## Contoh Request Bendahara Web
 
-- `architecture.md`: webhook architecture and sequence diagrams
-- `n8n-workflow-design.md`: n8n node-by-node design and parse script
-- `n8n-whatsapp-workflow.json`: importable n8n workflow skeleton
+```json
+POST /bendahara/transactions
+{
+  "phoneNumber": "628123456789",
+  "type": "masuk",
+  "amount": 50000,
+  "description": "iuran kelas"
+}
+```
 
 ## Admin API
 
-Admin digunakan untuk pengaturan sistem, bukan untuk transaksi keuangan.
-
-Open admin system frontend:
-
 ```text
-GET /admin
+GET    /admin/settings       — ambil pengaturan sistem
+PUT    /admin/settings       — update pengaturan sistem
+GET    /admin/system-status  — status service dan environment
 ```
 
-Get system settings:
-
-```text
-GET /admin/settings
-```
-
-Update system settings:
-
-```text
-PUT /admin/settings
-```
-
-Request body:
+Contoh body `PUT /admin/settings`:
 
 ```json
 {
-  "appName": "Kas Kelas WhatsApp Automation",
+  "appName": "KasBot",
   "whatsappProvider": "whatsapp-cloud-api",
   "whatsappWebhookEnabled": true,
   "backendBaseUrl": "http://localhost:3000",
@@ -182,46 +142,8 @@ Request body:
 }
 ```
 
-Get system status:
+## Dokumentasi Tambahan
 
-```text
-GET /admin/system-status
-```
-
-## Bendahara Web API
-
-Bendahara digunakan untuk transaksi, pencatatan, saldo, dan report.
-
-Open bendahara frontend:
-
-```text
-GET /bendahara
-```
-
-Create transaction without WhatsApp:
-
-```text
-POST /bendahara/transactions
-```
-
-Request body:
-
-```json
-{
-  "type": "masuk",
-  "amount": 50000,
-  "description": "iuran kelas"
-}
-```
-
-Get bendahara summary:
-
-```text
-GET /bendahara/summary
-```
-
-Get transaction list:
-
-```text
-GET /bendahara/transactions
-```
+- `architecture.md` — arsitektur webhook dan sequence diagram
+- `n8n-workflow-design.md` — desain workflow n8n node per node
+- `n8n-whatsapp-workflow.json` — skeleton workflow siap import ke n8n
