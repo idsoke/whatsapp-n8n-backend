@@ -90,13 +90,20 @@ Server berjalan di `http://localhost:3000`.
 
 ## Contoh Request WhatsApp
 
-```json
+```text
 POST /transactions/wa
+Content-Type: application/json
+x-n8n-api-key: <N8N_WEBHOOK_SECRET>
+```
+
+```json
 {
   "phoneNumber": "628123456789",
   "message": "masuk 50000 iuran kelas"
 }
 ```
+
+Header `x-n8n-api-key` wajib dikirim dan harus sama dengan nilai `N8N_WEBHOOK_SECRET` di `.env`. Request tanpa header ini atau dengan nilai yang salah akan ditolak dengan `401 Unauthorized`.
 
 Response:
 

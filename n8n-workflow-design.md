@@ -82,6 +82,8 @@ return [
 
 - Method: `POST`
 - URL: `http://localhost:3000/transactions/wa`
+- Send headers: enabled
+  - `x-n8n-api-key`: must match the backend's `N8N_WEBHOOK_SECRET` env var. Requests without this header (or with the wrong value) get `401 Unauthorized`.
 - Send body: `JSON`
 - Body:
 
@@ -95,6 +97,8 @@ return [
 ```
 
 The backend whitelist validation ignores extra fields, so you can later forward `from` or `providerMessageId` after adding persistence/idempotency columns.
+
+> Tip: store the API key in an n8n credential or environment variable instead of hardcoding it in the workflow JSON.
 
 ## Node 4 - Respond to Webhook
 

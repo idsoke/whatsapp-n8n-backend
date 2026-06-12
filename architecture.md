@@ -61,7 +61,10 @@ Endpoint:
 ```text
 POST /transactions/wa
 Content-Type: application/json
+x-n8n-api-key: <N8N_WEBHOOK_SECRET>
 ```
+
+The `x-n8n-api-key` header is required and must match the `N8N_WEBHOOK_SECRET` environment variable. Missing or incorrect keys are rejected with `401 Unauthorized`.
 
 Raw message request:
 
@@ -142,7 +145,7 @@ sequenceDiagram
 
 ## Production Notes
 
-- Add an API key or HMAC signature between n8n and NestJS.
+- ~~Add an API key or HMAC signature between n8n and NestJS.~~ Done — `N8nApiKeyGuard` enforces `x-n8n-api-key` on `POST /transactions/wa`.
 - Store transactions in a database instead of process memory.
 - Keep provider-specific webhook verification in n8n or behind an API gateway.
 - Add idempotency using provider message IDs so retries do not create duplicate transactions.

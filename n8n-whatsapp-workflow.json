@@ -29,6 +29,15 @@
       "parameters": {
         "method": "POST",
         "url": "http://localhost:3000/transactions/wa",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "x-n8n-api-key",
+              "value": "change-this-in-production"
+            }
+          ]
+        },
         "sendBody": true,
         "contentType": "json",
         "specifyBody": "json",
