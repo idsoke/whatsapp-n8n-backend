@@ -41,7 +41,7 @@
         "sendBody": true,
         "contentType": "json",
         "specifyBody": "json",
-        "jsonBody": "={{ JSON.stringify({ message: $json.message, command: $json.command, amount: $json.amount, description: $json.description }) }}",
+        "jsonBody": "={{ JSON.stringify({ phoneNumber: $json.from, message: $json.message, command: $json.command, amount: $json.amount, description: $json.description, providerMessageId: $json.providerMessageId }) }}",
         "options": {}
       },
       "id": "c9460c18-6ff7-4d11-88d6-b76cc21a411b",

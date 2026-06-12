@@ -4,6 +4,10 @@ import { Type } from 'class-transformer';
 export class CreateWaTransactionDto {
   @IsOptional()
   @IsString()
+  phoneNumber?: string;
+
+  @IsOptional()
+  @IsString()
   message?: string;
 
   @IsOptional()
@@ -20,4 +24,8 @@ export class CreateWaTransactionDto {
   @IsOptional()
   @IsString()
   description?: string;
+
+  @IsOptional()
+  @IsString()
+  providerMessageId?: string;
 }

@@ -89,14 +89,16 @@ return [
 
 ```json
 {
+  "phoneNumber": "={{ $json.from }}",
   "message": "={{ $json.message }}",
   "command": "={{ $json.command }}",
   "amount": "={{ $json.amount }}",
-  "description": "={{ $json.description }}"
+  "description": "={{ $json.description }}",
+  "providerMessageId": "={{ $json.providerMessageId }}"
 }
 ```
 
-The backend whitelist validation ignores extra fields, so you can later forward `from` or `providerMessageId` after adding persistence/idempotency columns.
+`phoneNumber` must be the sender's WhatsApp number (already registered and verified as a treasurer), and `providerMessageId` enables idempotency on retried webhook deliveries.
 
 > Tip: store the API key in an n8n credential or environment variable instead of hardcoding it in the workflow JSON.
 

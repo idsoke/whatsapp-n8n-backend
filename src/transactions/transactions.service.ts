@@ -100,7 +100,7 @@ export class TransactionsService {
     });
   }
 
-  async handleWhatsAppPayload(payload: CreateWaTransactionDto & { phoneNumber?: string; providerMessageId?: string }) {
+  async handleWhatsAppPayload(payload: CreateWaTransactionDto) {
     if (!payload.phoneNumber) {
       throw new BadRequestException('phoneNumber is required for WhatsApp transaction entry.');
     }
